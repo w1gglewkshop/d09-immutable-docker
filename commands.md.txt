@@ -1,0 +1,47 @@
+# Commands
+
+Prerequisite: Docker Desktop is running. Check with `docker ps`.
+
+## Demo 1: writable container (default)
+
+```
+docker run -d --name writable-nginx nginx
+docker exec writable-nginx sh -c "echo hacked > /usr/share/nginx/html/hack.txt"
+docker exec writable-nginx cat /usr/share/nginx/html/hack.txt
+```
+
+Expected: the write prints nothing (success) and `cat` prints `hacked`.
+
+## Demo 2: read-only container
+
+```
+docker run -d --name readonly-nginx --read-only --tmpfs /run --tmpfs /var/cache/nginx nginx
+docker ps
+docker exec readonly-nginx sh -c "echo hacked > /usr/share/nginx/html/hack.txt"
+```
+
+Expected: `readonly-nginx` is Up, and the write fails with a
+`Read-only file system` error.
+
+Note: nginx needs `/run` and `/var/cache/nginx` as tmpfs to start.
+The web root stays read-only.
+
+## Demo 3: Docker Compose
+
+Run from the folder that contains `compose.yaml`:
+
+```
+docker compose up -d
+docker compose ps
+docker exec secure-nginx sh -c "echo hacked > /usr/share/nginx/html/hack.txt"
+```
+
+Expected: `secure-nginx` is running on port 8080, and the write fails
+with a `Read-only file system` error. http://localhost:8080 still loads.
+
+## Cleanup
+
+```
+docker compose down
+docker rm -f writable-nginx readonly-nginx
+```
